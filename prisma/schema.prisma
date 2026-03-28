@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  RECEPTIONNISTE
+  MAGASINIER
+  CONTROLEUR
+  CLIENT
+}
+
+enum TypeVehicule {
+  VOITURE
+  CAMION
+  BUS
+}
+
+enum Section {
+  TOLERIE
+  SOUDURE
+  ELECTRICITE
+  POIDS_LOURDS
+  POIDS_LEGERS
+}
+
+enum StatutOR {
+  EN_ATTENTE
+  EN_COURS
+  CLOTURE
+}
+
+enum StatutPanne {
+  SIGNALE
+  EN_COURS
+  RESOLU
+}
+
+enum StatutIntervention {
+  EN_COURS
+  TERMINE
+}
+
+enum StatutPicklist {
+  EN_ATTENTE
+  SIGNE
+  DELIVRE
+}
+
+enum StatutPaiementPicklist {
+  NON_PAYE
+  PAYE
+}
+
+enum StatutFacture {
+  EN_ATTENTE
+  PAYEE
+}
+
+enum TypePaiement {
+  ACOMPTE
+  PICKLIST
+  SOLDE_FINAL
+}
+
+enum MethodePaiement {
+  ESPECES
+  MOBILE_MONEY
+  VIREMENT
+}
+
+enum TypeMouvement {
+  ENTREE
+  SORTIE
+}
+
+model User {
+  id            String    @id @default(cuid())
+  nom           String
+  prenom        String
+  email         String    @unique
+  password      String
+  telephone     String?
+  role          Role      @default(CLIENT)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  client             Client?
+  ordresCreated      OrdreReparation[]
+  mouvementsStock    MouvementStock[]
+}
+
+model Client {
+  id          String    @id @default(cuid())
+  nom         String
+  prenom      String
+  telephone   String    @unique
+  email       String?
+  adresse     String?
+  userId      String?   @unique
+  user        User?     @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
+
+  vehicles    Vehicle[]
+  factures    Facture[]
+}
+
+model Vehicle {
+  id              String        @id @default(cuid())
+  matricule       String        @unique
+  marque          String
+  modele          String
+  typeVehicule    TypeVehicule
+  numeroChassis   String?
+  clientId        String
+  client          Client        @relation(fields: [clientId], references: [id])
+  createdAt       DateTime      @default(now())
+
+  ordresReparation OrdreReparation[]
+}
+
+model OrdreReparation {
+  id                    String      @id @default(cuid())
+  numeroOR              String      @unique
+  vehicleId             String
+  vehicle               Vehicle     @relation(fields: [vehicleId], references: [id])
+  chauffeurNom          String
+  chauffeurTel          String
+  serviceDorigine       String?
+  kilometrage           Int
+  niveauCarburant       String
+  niveauUsurePneus      String
+  lotDeBord             String?
+  prochaineVidange      String?
+  dateEntree            DateTime    @default(now())
+  dateSortie            DateTime?
+  statut                StatutOR    @default(EN_ATTENTE)
+  signatureChauffeur    String?
+  signatureControleur   String?
+  createdById           String
+  createdBy             User        @relation(fields: [createdById], references: [id])
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  pannes          Panne[]
+  interventions   Intervention[]
+  picklists       Picklist[]
+  ficheCloture    FicheCloture?
+  facture         Facture?
+  paiements       Paiement[]
+}
+
+model Panne {
+  id                  String       @id @default(cuid())
+  ordreReparationId   String
+  ordreReparation     OrdreReparation @relation(fields: [ordreReparationId], references: [id])
+  description         String
+  section             Section?
+  statut              StatutPanne  @default(SIGNALE)
+  mecanicienNom       String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+}
+
+model Intervention {
+  id                  String             @id @default(cuid())
+  ordreReparationId   String
+  ordreReparation     OrdreReparation    @relation(fields: [ordreReparationId], references: [id])
+  mecanicienNom       String
+  section             Section
+  description         String
+  heuresTravail       Decimal            @default(0)
+  tauxHoraire         Int                @default(0)
+  statut              StatutIntervention @default(EN_COURS)
+  dateDebut           DateTime           @default(now())
+  dateFin             DateTime?
+}
+
+model Piece {
+  id              String    @id @default(cuid())
+  codeBarre       String    @unique
+  designation     String
+  categorie       String?
+  prixUnitaire    Int
+  quantiteEnStock Int       @default(0)
+  seuilAlerte     Int       @default(5)
+  emplacement     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  picklistItems     PicklistItem[]
+  mouvementsStock   MouvementStock[]
+}
+
+model Picklist {
+  id                    String                @id @default(cuid())
+  numeroPicklist        String                @unique
+  ordreReparationId     String
+  ordreReparation       OrdreReparation       @relation(fields: [ordreReparationId], references: [id])
+  mecanicienNom         String
+  statut                StatutPicklist        @default(EN_ATTENTE)
+  signatureControleur   String?
+  paiementStatut        StatutPaiementPicklist @default(NON_PAYE)
+  montantTotal          Int                   @default(0)
+  createdAt             DateTime              @default(now())
+
+  items       PicklistItem[]
+  paiements   Paiement[]
+  mouvements  MouvementStock[]
+}
+
+model PicklistItem {
+  id            String    @id @default(cuid())
+  picklistId    String
+  picklist      Picklist  @relation(fields: [picklistId], references: [id])
+  pieceId       String
+  piece         Piece     @relation(fields: [pieceId], references: [id])
+  quantite      Int
+  prixUnitaire  Int
+}
+
+model MouvementStock {
+  id              String        @id @default(cuid())
+  pieceId         String
+  piece           Piece         @relation(fields: [pieceId], references: [id])
+  type            TypeMouvement
+  quantite        Int
+  picklistId      String?
+  picklist        Picklist?     @relation(fields: [picklistId], references: [id])
+  motif           String?
+  effectueParId   String
+  effectuePar     User          @relation(fields: [effectueParId], references: [id])
+  date            DateTime      @default(now())
+}
+
+model FicheCloture {
+  id                    String          @id @default(cuid())
+  numeroCloture         String          @unique
+  ordreReparationId     String          @unique
+  ordreReparation       OrdreReparation @relation(fields: [ordreReparationId], references: [id])
+  signatureControleur   String?
+  dateGeneration        DateTime        @default(now())
+}
+
+model Facture {
+  id                  String          @id @default(cuid())
+  numeroFacture       String          @unique
+  ordreReparationId   String          @unique
+  ordreReparation     OrdreReparation @relation(fields: [ordreReparationId], references: [id])
+  clientId            String
+  client              Client          @relation(fields: [clientId], references: [id])
+  montantPieces       Int             @default(0)
+  montantMainOeuvre   Int             @default(0)
+  montantTotal        Int             @default(0)
+  montantPaye         Int             @default(0)
+  montantRestant      Int             @default(0)
+  statut              StatutFacture   @default(EN_ATTENTE)
+  dateEmission        DateTime        @default(now())
+
+  paiements   Paiement[]
+}
+
+model Paiement {
+  id                  String          @id @default(cuid())
+  montant             Int
+  type                TypePaiement
+  methode             MethodePaiement
+  ordreReparationId   String
+  ordreReparation     OrdreReparation @relation(fields: [ordreReparationId], references: [id])
+  picklistId          String?
+  picklist            Picklist?       @relation(fields: [picklistId], references: [id])
+  factureId           String?
+  facture             Facture?        @relation(fields: [factureId], references: [id])
+  referencePaiement   String?
+  date                DateTime        @default(now())
+}
