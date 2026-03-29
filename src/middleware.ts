@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export default auth((req) => {
   const { pathname } = req.nextUrl;
 
-  const publicRoutes = ["/connexion", "/api/auth"];
+  const publicRoutes = ["/connexion", "/api/auth", "/api/webhooks"];
   if (publicRoutes.some((route) => pathname.startsWith(route))) {
     return NextResponse.next();
   }
