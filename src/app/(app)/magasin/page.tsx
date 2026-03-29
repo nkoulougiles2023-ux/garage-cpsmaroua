@@ -5,12 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BarcodeDisplay } from "@/components/magasin/barcode-display";
+import { StockSearch } from "@/components/magasin/stock-search";
+import { PieceEditDialog } from "@/components/magasin/piece-edit-dialog";
 import { PlusCircle, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export default async function MagasinPage() {
+export default async function MagasinPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
   await requireRole(["ADMIN", "MAGASINIER"]);
-  const pieces = await getPieces();
+  const { q } = await searchParams;
+  const pieces = await getPieces(q);
 
   return (
     <div className="space-y-6">
@@ -22,10 +29,14 @@ export default async function MagasinPage() {
         </Button>
       </div>
 
+      <StockSearch />
+
       {pieces.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
           <Package className="mb-4 h-10 w-10 text-muted-foreground" />
-          <p className="text-muted-foreground">Aucune pièce en stock</p>
+          <p className="text-muted-foreground">
+            {q ? "Aucune pièce trouvée" : "Aucune pièce en stock"}
+          </p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -41,11 +52,14 @@ export default async function MagasinPage() {
                     <CardTitle className="text-base leading-tight">
                       {piece.designation}
                     </CardTitle>
-                    {piece.categorie && (
-                      <Badge variant="outline" className="shrink-0 text-xs">
-                        {piece.categorie}
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {piece.categorie && (
+                        <Badge variant="outline" className="shrink-0 text-xs">
+                          {piece.categorie}
+                        </Badge>
+                      )}
+                      <PieceEditDialog piece={piece} />
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">

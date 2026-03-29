@@ -42,7 +42,7 @@ const navByRole: Record<string, NavItem[]> = {
     { label: "Factures", href: "/factures", icon: FileText },
   ],
   RECEPTIONNISTE: [
-    { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Tableau de bord", href: "/reception/dashboard", icon: LayoutDashboard },
     { label: "Nouvelle réception", href: "/reception/nouveau", icon: Car },
     { label: "Ordres de réparation", href: "/ordres", icon: ClipboardList },
     { label: "Picklists", href: "/picklists", icon: FileText },
@@ -50,9 +50,12 @@ const navByRole: Record<string, NavItem[]> = {
     { label: "Factures", href: "/factures", icon: FileText },
   ],
   MAGASINIER: [
+    { label: "Tableau de bord", href: "/magasin/dashboard", icon: LayoutDashboard },
     { label: "Inventaire", href: "/magasin", icon: Package },
+    { label: "Entrée de stock", href: "/magasin/entree", icon: Package },
     { label: "Picklists à livrer", href: "/picklists", icon: FileText },
     { label: "Mouvements de stock", href: "/magasin/mouvements", icon: BarChart3 },
+    { label: "Alertes stock bas", href: "/magasin/alertes", icon: Package },
   ],
   CLIENT: [
     { label: "Mes réparations", href: "/mes-reparations", icon: Car },
@@ -60,9 +63,21 @@ const navByRole: Record<string, NavItem[]> = {
   ],
 };
 
-export function Sidebar({ role }: { role: string }) {
+export function Sidebar({
+  role,
+  permissions,
+}: {
+  role: string;
+  permissions?: Record<string, boolean>;
+}) {
   const pathname = usePathname();
-  const items = navByRole[role] ?? [];
+  const allItems = navByRole[role] ?? [];
+
+  // Admin and Client always see all their items. Other roles are filtered by permissions.
+  const items =
+    role === "ADMIN" || role === "CLIENT" || !permissions
+      ? allItems
+      : allItems.filter((item) => permissions[item.href] !== false);
 
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">

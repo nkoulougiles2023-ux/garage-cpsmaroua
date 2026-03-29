@@ -9,10 +9,12 @@ export function AppShell({
   children,
   userName,
   role,
+  permissions,
 }: {
   children: React.ReactNode;
   userName: string;
   role: string;
+  permissions?: Record<string, boolean>;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -30,7 +32,7 @@ export function AppShell({
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <Sidebar role={role} />
+        <Sidebar role={role} permissions={permissions} />
       </div>
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header

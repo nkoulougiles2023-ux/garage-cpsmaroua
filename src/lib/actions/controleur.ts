@@ -9,19 +9,46 @@ import {
 } from "@prisma/client";
 
 export async function getControleurStats() {
-  const [pannesNonAssignees, interventionsEnCours, picklistsEnAttente] =
-    await Promise.all([
-      db.panne.count({
-        where: { statut: StatutPanne.SIGNALE, mecanicienNom: null },
-      }),
-      db.intervention.count({
-        where: { statut: StatutIntervention.EN_COURS },
-      }),
-      db.picklist.count({
-        where: { statut: StatutPicklist.EN_ATTENTE },
-      }),
-    ]);
-  return { pannesNonAssignees, interventionsEnCours, picklistsEnAttente };
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  const [
+    pannesNonAssignees,
+    interventionsEnCours,
+    picklistsEnAttente,
+    interventionsTermineeCeMois,
+    picklistsSigneesCeMois,
+  ] = await Promise.all([
+    db.panne.count({
+      where: { statut: StatutPanne.SIGNALE, mecanicienNom: null },
+    }),
+    db.intervention.count({
+      where: { statut: StatutIntervention.EN_COURS },
+    }),
+    db.picklist.count({
+      where: { statut: StatutPicklist.APPROUVE_ADMIN },
+    }),
+    db.intervention.count({
+      where: {
+        statut: StatutIntervention.TERMINE,
+        dateFin: { gte: startOfMonth },
+      },
+    }),
+    db.picklist.count({
+      where: {
+        statut: { in: [StatutPicklist.SIGNE, StatutPicklist.DELIVRE] },
+        signatureControleur: { not: null },
+      },
+    }),
+  ]);
+  return {
+    pannesNonAssignees,
+    interventionsEnCours,
+    picklistsEnAttente,
+    interventionsTermineeCeMois,
+    picklistsSigneesCeMois,
+  };
 }
 
 export async function getOrdresByStatut() {
@@ -41,7 +68,7 @@ export async function getOrdresByStatut() {
 
 export async function getPicklistsToSign() {
   return db.picklist.findMany({
-    where: { statut: StatutPicklist.EN_ATTENTE },
+    where: { statut: StatutPicklist.APPROUVE_ADMIN },
     include: {
       ordreReparation: { select: { numeroOR: true } },
       items: { include: { piece: true } },

@@ -32,7 +32,7 @@ export default async function ControleurPage() {
       <h1 className="text-2xl font-bold">Panneau de Commandes</h1>
 
       {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">
@@ -77,6 +77,34 @@ export default async function ControleurPage() {
             <p className="text-xs text-muted-foreground">
               En attente de signature
             </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">
+              Interventions terminees
+            </CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.interventionsTermineeCeMois}
+            </div>
+            <p className="text-xs text-muted-foreground">ce mois</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">
+              Picklists signees
+            </CardTitle>
+            <ClipboardCheck className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.picklistsSigneesCeMois}
+            </div>
+            <p className="text-xs text-muted-foreground">total signees</p>
           </CardContent>
         </Card>
       </div>

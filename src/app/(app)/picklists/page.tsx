@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, ClipboardCheck } from "lucide-react";
 import { StatutPicklist, StatutPaiementPicklist } from "@prisma/client";
 import { PicklistPaymentButton } from "@/components/payments/picklist-payment-button";
+import { ApprovePicklistButton } from "@/components/admin/approve-picklist-button";
+import { SignPicklistButton } from "@/components/controleur/sign-picklist-button";
 
 function statutPicklistBadge(statut: StatutPicklist) {
   switch (statut) {
@@ -14,6 +16,12 @@ function statutPicklistBadge(statut: StatutPicklist) {
       return (
         <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
           En attente
+        </Badge>
+      );
+    case StatutPicklist.APPROUVE_ADMIN:
+      return (
+        <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+          Approuvé Admin
         </Badge>
       );
     case StatutPicklist.SIGNE:
@@ -113,6 +121,16 @@ export default async function PicklistsPage() {
                 <p className="font-semibold text-base">
                   {picklist.montantTotal.toLocaleString("fr-FR")} FCFA
                 </p>
+                {role === "ADMIN" && picklist.statut === StatutPicklist.EN_ATTENTE && (
+                  <div className="pt-2">
+                    <ApprovePicklistButton picklistId={picklist.id} />
+                  </div>
+                )}
+                {(role === "CONTROLEUR" || role === "ADMIN") && picklist.statut === StatutPicklist.APPROUVE_ADMIN && (
+                  <div className="pt-2">
+                    <SignPicklistButton picklistId={picklist.id} />
+                  </div>
+                )}
                 {picklist.paiementStatut === StatutPaiementPicklist.NON_PAYE && picklist.montantTotal > 0 && (
                   <div className="pt-2">
                     <PicklistPaymentButton

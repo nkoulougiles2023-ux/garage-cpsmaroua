@@ -48,6 +48,7 @@ enum StatutIntervention {
 
 enum StatutPicklist {
   EN_ATTENTE
+  APPROUVE_ADMIN
   SIGNE
   DELIVRE
 }
@@ -88,6 +89,7 @@ model User {
   telephone     String?
   role          Role      @default(CLIENT)
   isActive      Boolean   @default(true)
+  permissions   Json?     @default("{}")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -206,6 +208,7 @@ model Picklist {
   mecanicienNom         String
   statut                StatutPicklist        @default(EN_ATTENTE)
   signatureControleur   String?
+  signatureAdmin        String?
   paiementStatut        StatutPaiementPicklist @default(NON_PAYE)
   montantTotal          Int                   @default(0)
   createdAt             DateTime              @default(now())

@@ -36,7 +36,32 @@ export async function createPicklist(data: {
   return { data: picklist };
 }
 
+export async function approvePicklist(picklistId: string, signature: string) {
+  const session = await auth();
+  if (!session?.user) return { error: "Non autorisé" };
+  const role = (session.user as any).role as string;
+  if (role !== "ADMIN") return { error: "Seul l'admin peut approuver" };
+
+  const existing = await db.picklist.findUnique({ where: { id: picklistId } });
+  if (!existing || existing.statut !== StatutPicklist.EN_ATTENTE) {
+    return { error: "La picklist doit être en attente pour être approuvée" };
+  }
+
+  const picklist = await db.picklist.update({
+    where: { id: picklistId },
+    data: { statut: StatutPicklist.APPROUVE_ADMIN, signatureAdmin: signature },
+  });
+  revalidatePath("/picklists");
+  revalidatePath("/controleur");
+  return { data: picklist };
+}
+
 export async function signPicklist(picklistId: string, signature: string) {
+  const existing = await db.picklist.findUnique({ where: { id: picklistId } });
+  if (!existing || existing.statut !== StatutPicklist.APPROUVE_ADMIN) {
+    return { error: "La picklist doit être approuvée par l'admin d'abord" };
+  }
+
   const picklist = await db.picklist.update({
     where: { id: picklistId },
     data: { signatureControleur: signature, statut: StatutPicklist.SIGNE },

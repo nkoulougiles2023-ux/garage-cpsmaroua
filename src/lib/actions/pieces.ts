@@ -22,10 +22,23 @@ export async function getPieces(search?: string) {
       OR: [
         { codeBarre: { contains: search, mode: "insensitive" } },
         { designation: { contains: search, mode: "insensitive" } },
+        { categorie: { contains: search, mode: "insensitive" } },
       ],
     } : undefined,
     orderBy: { designation: "asc" },
   });
+}
+
+export async function updatePiece(id: string, data: unknown) {
+  const parsed = pieceSchema.partial().safeParse(data);
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  const piece = await db.piece.update({
+    where: { id },
+    data: parsed.data,
+  });
+  revalidatePath("/magasin");
+  return { data: piece };
 }
 
 export async function getPieceByBarcode(codeBarre: string) {
