@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { FileText, Receipt } from "lucide-react";
+import { FacturePaymentButton } from "@/components/payments/facture-payment-button";
 
 export default async function FacturesPage() {
   await requireRole(["ADMIN", "RECEPTIONNISTE", "CONTROLEUR"]);
@@ -55,6 +56,13 @@ export default async function FacturesPage() {
                     <FileText className="mr-1 h-4 w-4" />
                     PDF
                   </Button>
+                  {f.montantRestant > 0 && (
+                    <FacturePaymentButton
+                      factureId={f.id}
+                      ordreReparationId={f.ordreReparationId}
+                      montantRestant={f.montantRestant}
+                    />
+                  )}
                 </div>
               </CardContent>
             </Card>

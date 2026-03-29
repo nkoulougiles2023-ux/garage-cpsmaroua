@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, ClipboardCheck } from "lucide-react";
 import { StatutPicklist, StatutPaiementPicklist } from "@prisma/client";
+import { PicklistPaymentButton } from "@/components/payments/picklist-payment-button";
 
 function statutPicklistBadge(statut: StatutPicklist) {
   switch (statut) {
@@ -112,6 +113,15 @@ export default async function PicklistsPage() {
                 <p className="font-semibold text-base">
                   {picklist.montantTotal.toLocaleString("fr-FR")} FCFA
                 </p>
+                {picklist.paiementStatut === StatutPaiementPicklist.NON_PAYE && picklist.montantTotal > 0 && (
+                  <div className="pt-2">
+                    <PicklistPaymentButton
+                      picklistId={picklist.id}
+                      ordreReparationId={picklist.ordreReparationId}
+                      montant={picklist.montantTotal}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
