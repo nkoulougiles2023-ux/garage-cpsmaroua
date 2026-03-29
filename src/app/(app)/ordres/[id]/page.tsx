@@ -11,6 +11,8 @@ import { AssignPanneDialog } from "@/components/controleur/assign-panne-dialog";
 import { PicklistPaymentButton } from "@/components/payments/picklist-payment-button";
 import { FacturePaymentButton } from "@/components/payments/facture-payment-button";
 import { AcompteDialog } from "@/components/payments/acompte-dialog";
+import { CreateInterventionDialog } from "@/components/controleur/create-intervention-dialog";
+import { ClotureDialog } from "@/components/controleur/cloture-dialog";
 import {
   StatutOR, StatutPanne, StatutPicklist,
   StatutPaiementPicklist, StatutIntervention,
@@ -155,36 +157,43 @@ export default async function OrdreDetailPage({ params }: Props) {
       </Card>
 
       {/* Interventions */}
-      {ordre.interventions.length > 0 && (
-        <Card>
-          <CardHeader>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Wrench className="h-5 w-5" />
               <CardTitle>Interventions ({ordre.interventions.length})</CardTitle>
             </div>
-          </CardHeader>
+            {canAssign && ordre.statut !== StatutOR.CLOTURE && (
+              <CreateInterventionDialog ordreReparationId={ordre.id} />
+            )}
+          </div>
+        </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {ordre.interventions.map((int) => (
-                <div key={int.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                  <div>
-                    <p className="font-medium">{int.description}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {int.mecanicienNom} — {sectionLabels[int.section] || int.section}
-                    </p>
+            {ordre.interventions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Aucune intervention.</p>
+            ) : (
+              <div className="space-y-2">
+                {ordre.interventions.map((int) => (
+                  <div key={int.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                    <div>
+                      <p className="font-medium">{int.description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {int.mecanicienNom} — {sectionLabels[int.section] || int.section}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs">{Number(int.heuresTravail)}h x {int.tauxHoraire.toLocaleString("fr-FR")} FCFA</span>
+                      <Badge variant={int.statut === StatutIntervention.TERMINE ? "default" : "secondary"}>
+                        {int.statut === StatutIntervention.TERMINE ? "Termine" : "En cours"}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs">{Number(int.heuresTravail)}h x {int.tauxHoraire.toLocaleString("fr-FR")} FCFA</span>
-                    <Badge variant={int.statut === StatutIntervention.TERMINE ? "default" : "secondary"}>
-                      {int.statut === StatutIntervention.TERMINE ? "Termine" : "En cours"}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
-      )}
 
       {/* Picklists */}
       {ordre.picklists.length > 0 && (
@@ -320,7 +329,12 @@ export default async function OrdreDetailPage({ params }: Props) {
       )}
 
       {/* Actions */}
-      <OrdreActions ordre={{ id: ordre.id, signatureChauffeur: ordre.signatureChauffeur }} />
+      <div className="flex items-center gap-2 flex-wrap">
+        <OrdreActions ordre={{ id: ordre.id, signatureChauffeur: ordre.signatureChauffeur }} />
+        {canAssign && ordre.statut === StatutOR.EN_COURS && !ordre.ficheCloture && (
+          <ClotureDialog ordreReparationId={ordre.id} />
+        )}
+      </div>
     </div>
   );
 }

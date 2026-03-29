@@ -35,10 +35,11 @@ const navByRole: Record<string, NavItem[]> = {
     { label: "Paramètres", href: "/parametres", icon: Settings },
   ],
   CONTROLEUR: [
-    { label: "Panneau de commandes", href: "/dashboard", icon: Gauge },
+    { label: "Panneau de commandes", href: "/controleur", icon: Gauge },
     { label: "Ordres de réparation", href: "/ordres", icon: ClipboardList },
-    { label: "Assignations", href: "/assignations", icon: Users },
     { label: "Picklists", href: "/picklists", icon: FileText },
+    { label: "Paiements", href: "/paiements", icon: CreditCard },
+    { label: "Factures", href: "/factures", icon: FileText },
   ],
   RECEPTIONNISTE: [
     { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard },
