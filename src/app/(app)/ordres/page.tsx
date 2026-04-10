@@ -44,7 +44,7 @@ export default async function OrdresPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Ordres de réparation</h1>
         {canCreate && (
-          <Button render={<Link href="/reception/nouveau" />}>
+          <Button nativeButton={false} render={<Link href="/reception/nouveau" />}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Nouvelle réception
           </Button>

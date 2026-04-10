@@ -30,6 +30,7 @@ export function StockEntryForm({ pieces }: { pieces: PieceOption[] }) {
   const [motif, setMotif] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [success, setSuccess] = React.useState(false);
 
   const selectedPiece = pieces.find((p) => p.id === pieceId);
 
@@ -37,6 +38,7 @@ export function StockEntryForm({ pieces }: { pieces: PieceOption[] }) {
     if (!pieceId || !quantite || Number(quantite) <= 0) return;
     setLoading(true);
     setError("");
+    setSuccess(false);
 
     try {
       const result = await createStockEntry({
@@ -48,7 +50,10 @@ export function StockEntryForm({ pieces }: { pieces: PieceOption[] }) {
         setError(typeof result.error === "string" ? result.error : "Erreur");
         return;
       }
-      router.push("/magasin");
+      setSuccess(true);
+      setPieceId("");
+      setQuantite("");
+      setMotif("");
       router.refresh();
     } finally {
       setLoading(false);
@@ -67,12 +72,19 @@ export function StockEntryForm({ pieces }: { pieces: PieceOption[] }) {
         {error && (
           <div className="rounded-lg border border-destructive bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
         )}
+        {success && (
+          <div className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-800">
+            Entrée enregistrée. En attente de validation par le contrôleur.
+          </div>
+        )}
 
         <div className="flex flex-col gap-1.5">
           <Label>Piece</Label>
           <Select value={pieceId} onValueChange={(v) => setPieceId(v ?? "")}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Choisir une piece" />
+              <SelectValue placeholder="Choisir une piece">
+                {pieceId ? `${selectedPiece?.codeBarre} — ${selectedPiece?.designation}` : "Choisir une piece"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {pieces.map((p) => (

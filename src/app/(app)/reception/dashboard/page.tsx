@@ -41,7 +41,7 @@ export default async function ReceptionDashboardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Tableau de bord — Reception</h1>
-        <Button render={<Link href="/reception/nouveau" />}>
+        <Button nativeButton={false} render={<Link href="/reception/nouveau" />}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Nouvelle reception
         </Button>
@@ -163,7 +163,7 @@ export default async function ReceptionDashboardPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Derniers ordres de reparation</CardTitle>
-          <Button variant="ghost" size="sm" render={<Link href="/ordres" />}>
+          <Button nativeButton={false} variant="ghost" size="sm" render={<Link href="/ordres" />}>
             Voir tout
           </Button>
         </CardHeader>

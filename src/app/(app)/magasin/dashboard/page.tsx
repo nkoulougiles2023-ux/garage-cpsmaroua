@@ -132,7 +132,7 @@ export default async function MagasinierDashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Derniers mouvements</CardTitle>
-            <Button variant="ghost" size="sm" render={<Link href="/magasin/mouvements" />}>
+            <Button nativeButton={false} variant="ghost" size="sm" render={<Link href="/magasin/mouvements" />}>
               Voir tout
             </Button>
           </CardHeader>
@@ -182,7 +182,7 @@ export default async function MagasinierDashboardPage() {
               <AlertTriangle className="h-4 w-4 text-destructive" />
               Alertes stock
             </CardTitle>
-            <Button variant="ghost" size="sm" render={<Link href="/magasin/alertes" />}>
+            <Button nativeButton={false} variant="ghost" size="sm" render={<Link href="/magasin/alertes" />}>
               Voir tout
             </Button>
           </CardHeader>

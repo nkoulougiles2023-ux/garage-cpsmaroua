@@ -3,7 +3,8 @@ import {
   getControleurStats,
   getOrdresByStatut,
   getPicklistsToSign,
-} from "@/lib/actions/controleur";
+  getPendingStockEntries,
+} from "@/lib/queries/controleur";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,16 +16,19 @@ import {
   Clock,
   CheckCircle,
   Pause,
+  Package,
 } from "lucide-react";
 import { SignPicklistButton } from "@/components/controleur/sign-picklist-button";
+import { ValidateStockEntryButtons } from "@/components/controleur/validate-stock-entry";
 
 export default async function ControleurPage() {
   await requireRole(["ADMIN", "CONTROLEUR"]);
 
-  const [stats, ordres, picklists] = await Promise.all([
+  const [stats, ordres, picklists, pendingEntries] = await Promise.all([
     getControleurStats(),
     getOrdresByStatut(),
     getPicklistsToSign(),
+    getPendingStockEntries(),
   ]);
 
   return (
@@ -32,7 +36,7 @@ export default async function ControleurPage() {
       <h1 className="text-2xl font-bold">Panneau de Commandes</h1>
 
       {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">
@@ -107,7 +111,61 @@ export default async function ControleurPage() {
             <p className="text-xs text-muted-foreground">total signees</p>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">
+              Entrées stock
+            </CardTitle>
+            <Package className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              {stats.entreesEnAttente}
+            </div>
+            <p className="text-xs text-muted-foreground">à valider</p>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Pending Stock Entries */}
+      {pendingEntries.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-orange-500" />
+              <CardTitle>Entrées de stock en attente de validation ({pendingEntries.length})</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {pendingEntries.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="flex items-center justify-between rounded-lg border p-3"
+                >
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">
+                      {entry.piece.designation}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Code: {entry.piece.codeBarre} — Quantité: <span className="font-semibold text-foreground">{entry.quantite}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Par: {entry.effectuePar.prenom} {entry.effectuePar.nom} — {new Date(entry.date).toLocaleDateString("fr-FR")}
+                    </p>
+                    {entry.motif && (
+                      <p className="text-xs text-muted-foreground">
+                        Motif: {entry.motif}
+                      </p>
+                    )}
+                  </div>
+                  <ValidateStockEntryButtons mouvementId={entry.id} />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Picklists to sign */}
       {picklists.length > 0 && (

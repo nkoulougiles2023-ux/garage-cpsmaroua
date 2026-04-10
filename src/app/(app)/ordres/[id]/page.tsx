@@ -78,7 +78,7 @@ export default async function OrdreDetailPage({ params }: Props) {
         </div>
         <div className="flex items-center gap-2">
           <Badge className={statutORColors[ordre.statut]}>{ordre.statut.replace("_", " ")}</Badge>
-          <Button variant="outline" size="sm" render={<Link href={`/api/pdf/or/${ordre.id}`} target="_blank" />}>
+          <Button nativeButton={false} variant="outline" size="sm" render={<Link href={`/api/pdf/or/${ordre.id}`} target="_blank" />}>
             <Download className="mr-1 h-4 w-4" /> PDF OR
           </Button>
         </div>
@@ -217,7 +217,7 @@ export default async function OrdreDetailPage({ params }: Props) {
                     <Badge variant={pk.paiementStatut === StatutPaiementPicklist.PAYE ? "default" : "secondary"}>
                       {pk.paiementStatut === StatutPaiementPicklist.PAYE ? "Paye" : "Non paye"}
                     </Badge>
-                    <Button variant="outline" size="sm" render={<Link href={`/api/pdf/picklist/${pk.id}`} target="_blank" />}>
+                    <Button nativeButton={false} variant="outline" size="sm" render={<Link href={`/api/pdf/picklist/${pk.id}`} target="_blank" />}>
                       <Download className="h-3 w-3" />
                     </Button>
                   </div>
@@ -293,7 +293,7 @@ export default async function OrdreDetailPage({ params }: Props) {
                 <FileText className="h-5 w-5" />
                 <CardTitle>Facture — {ordre.facture.numeroFacture}</CardTitle>
               </div>
-              <Button variant="outline" size="sm" render={<Link href={`/api/pdf/facture/${ordre.facture.id}`} target="_blank" />}>
+              <Button nativeButton={false} variant="outline" size="sm" render={<Link href={`/api/pdf/facture/${ordre.facture.id}`} target="_blank" />}>
                 <Download className="mr-1 h-4 w-4" /> PDF
               </Button>
             </div>
@@ -321,7 +321,7 @@ export default async function OrdreDetailPage({ params }: Props) {
               <p className="font-medium">Fiche de Cloture — {ordre.ficheCloture.numeroCloture}</p>
               <p className="text-xs text-muted-foreground">{new Date(ordre.ficheCloture.dateGeneration).toLocaleDateString("fr-FR")}</p>
             </div>
-            <Button variant="outline" size="sm" render={<Link href={`/api/pdf/cloture/${ordre.ficheCloture.id}`} target="_blank" />}>
+            <Button nativeButton={false} variant="outline" size="sm" render={<Link href={`/api/pdf/cloture/${ordre.ficheCloture.id}`} target="_blank" />}>
               <Download className="mr-1 h-4 w-4" /> PDF
             </Button>
           </CardContent>

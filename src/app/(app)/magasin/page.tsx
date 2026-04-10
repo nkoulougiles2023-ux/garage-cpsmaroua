@@ -23,7 +23,7 @@ export default async function MagasinPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Magasin — Pièces détachées</h1>
-        <Button render={<Link href="/magasin/nouveau" />}>
+        <Button nativeButton={false} render={<Link href="/magasin/nouveau" />}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Nouvelle pièce
         </Button>

@@ -81,14 +81,13 @@ export function Sidebar({
 
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-      <div className="flex h-16 items-center gap-3 px-6 border-b border-sidebar-border">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-bold text-sm">
-          CPS
-        </div>
-        <div>
-          <p className="font-semibold text-sm">CPS Maroua</p>
-          <p className="text-xs text-sidebar-foreground/60">Gestion Garage</p>
-        </div>
+      <div className="flex h-16 items-center px-3 border-b border-sidebar-border bg-white">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/CPS1.png"
+          alt="CPS Maroua"
+          className="w-full h-auto object-contain max-h-[48px]"
+        />
       </div>
       <nav className="flex-1 px-3 py-4 space-y-1">
         {items.map((item) => {

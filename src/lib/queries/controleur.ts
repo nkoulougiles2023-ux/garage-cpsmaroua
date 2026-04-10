@@ -1,5 +1,3 @@
-"use server";
-
 import { db } from "@/lib/db";
 import {
   StatutOR,
@@ -9,20 +7,6 @@ import {
   TypeMouvement,
   StatutMouvement,
 } from "@prisma/client";
-
-export async function getPendingStockEntries() {
-  return db.mouvementStock.findMany({
-    where: {
-      type: TypeMouvement.ENTREE,
-      statutValidation: StatutMouvement.EN_ATTENTE,
-    },
-    include: {
-      piece: { select: { codeBarre: true, designation: true } },
-      effectuePar: { select: { nom: true, prenom: true } },
-    },
-    orderBy: { date: "desc" },
-  });
-}
 
 export async function getControleurStats() {
   const startOfMonth = new Date();
@@ -98,5 +82,19 @@ export async function getPicklistsToSign() {
       items: { include: { piece: true } },
     },
     orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function getPendingStockEntries() {
+  return db.mouvementStock.findMany({
+    where: {
+      type: TypeMouvement.ENTREE,
+      statutValidation: StatutMouvement.EN_ATTENTE,
+    },
+    include: {
+      piece: { select: { codeBarre: true, designation: true } },
+      effectuePar: { select: { nom: true, prenom: true } },
+    },
+    orderBy: { date: "desc" },
   });
 }

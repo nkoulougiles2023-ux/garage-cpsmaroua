@@ -41,3 +41,5 @@ next-env.d.ts
 .superpowers/
 
 /src/generated/prisma
+.playwright-mcp/
+Image/

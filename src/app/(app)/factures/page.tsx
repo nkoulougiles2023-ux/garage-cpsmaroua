@@ -52,7 +52,7 @@ export default async function FacturesPage() {
                       </p>
                     )}
                   </div>
-                  <Button variant="outline" size="sm" render={<Link href={`/api/pdf/facture/${f.id}`} target="_blank" />}>
+                  <Button nativeButton={false} variant="outline" size="sm" render={<Link href={`/api/pdf/facture/${f.id}`} target="_blank" />}>
                     <FileText className="mr-1 h-4 w-4" />
                     PDF
                   </Button>

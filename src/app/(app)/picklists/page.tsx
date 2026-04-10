@@ -65,14 +65,14 @@ export default async function PicklistsPage() {
   const role = (session.user as any).role as string;
   const picklists = await getPicklists();
 
-  const canCreate = role === "ADMIN" || role === "RECEPTIONNISTE";
+  const canCreate = role === "ADMIN" || role === "CONTROLEUR";
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Picklists</h1>
         {canCreate && (
-          <Button render={<Link href="/picklists/nouveau" />}>
+          <Button nativeButton={false} render={<Link href="/picklists/nouveau" />}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Nouveau Picklist
           </Button>

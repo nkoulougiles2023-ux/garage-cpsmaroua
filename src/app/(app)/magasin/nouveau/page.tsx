@@ -165,7 +165,7 @@ export default function NouvellePiecePage() {
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
-              <Button variant="outline" render={<Link href="/magasin" />}>
+              <Button nativeButton={false} variant="outline" render={<Link href="/magasin" />}>
                 Annuler
               </Button>
               <Button type="submit" disabled={loading}>

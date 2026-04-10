@@ -59,7 +59,7 @@ export async function getOrdres(statut?: StatutOR) {
 }
 
 export async function getOrdreById(id: string) {
-  return db.ordreReparation.findUnique({
+  const ordre = await db.ordreReparation.findUnique({
     where: { id },
     include: {
       vehicle: { include: { client: true } },
@@ -72,6 +72,16 @@ export async function getOrdreById(id: string) {
       createdBy: { select: { nom: true, prenom: true } },
     },
   });
+  if (!ordre) return null;
+
+  // Convert Decimal fields to plain numbers for Client Component serialization
+  return {
+    ...ordre,
+    interventions: ordre.interventions.map((int) => ({
+      ...int,
+      heuresTravail: Number(int.heuresTravail),
+    })),
+  };
 }
 
 export async function signORChauffeur(ordreId: string, signature: string) {

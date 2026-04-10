@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { generateNumeroPicklist } from "@/lib/utils/numbering";
-import { StatutPicklist, StatutPaiementPicklist, TypeMouvement } from "@prisma/client";
+import { StatutPicklist, StatutPaiementPicklist } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
@@ -11,6 +11,13 @@ export async function createPicklist(data: {
   mecanicienNom: string;
   items: { pieceId: string; quantite: number; prixUnitaire: number }[];
 }) {
+  const session = await auth();
+  if (!session?.user) return { error: "Non autorisé" };
+  const role = (session.user as any).role as string;
+  if (role !== "CONTROLEUR" && role !== "ADMIN") {
+    return { error: "Seul le contrôleur peut créer un picklist" };
+  }
+
   const numeroPicklist = await generateNumeroPicklist();
   const montantTotal = data.items.reduce((sum, item) => sum + item.quantite * item.prixUnitaire, 0);
 
@@ -94,10 +101,11 @@ export async function deliverPicklist(picklistId: string) {
       await tx.mouvementStock.create({
         data: {
           pieceId: item.pieceId,
-          type: TypeMouvement.SORTIE,
+          type: "SORTIE",
           quantite: item.quantite,
           picklistId: picklist.id,
           motif: `Picklist ${picklist.numeroPicklist}`,
+          statutValidation: "VALIDE",
           effectueParId: userId,
         },
       });

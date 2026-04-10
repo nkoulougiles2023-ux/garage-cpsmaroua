@@ -4,7 +4,7 @@ import { StatutOR } from "@prisma/client";
 import { PicklistForm } from "@/components/picklists/picklist-form";
 
 export default async function NouveauPicklistPage() {
-  await requireRole(["ADMIN", "RECEPTIONNISTE"]);
+  await requireRole(["ADMIN", "CONTROLEUR"]);
   const ordres = await getOrdres(StatutOR.EN_COURS);
 
   const ordreOptions = ordres.map((o) => ({

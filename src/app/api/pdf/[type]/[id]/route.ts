@@ -30,6 +30,8 @@ export async function GET(
           include: {
             vehicle: { include: { client: true } },
             pannes: true,
+            interventions: true,
+            picklists: { include: { items: { include: { piece: true } } } },
           },
         });
         if (!or) {

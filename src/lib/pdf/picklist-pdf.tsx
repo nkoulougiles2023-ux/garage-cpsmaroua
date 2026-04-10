@@ -1,6 +1,6 @@
 import React from "react";
-import { Document, Page, Text, View } from "@react-pdf/renderer";
-import { styles, formatMontant, formatDate } from "./shared-styles";
+import { Document, Page, Text, View, Image } from "@react-pdf/renderer";
+import { styles, formatMontant, formatDate, CPS1_PATH, CPS2_PATH } from "./shared-styles";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function PicklistPdf({ data }: { data: any }) {
@@ -10,9 +10,9 @@ export function PicklistPdf({ data }: { data: any }) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
+        {/* Header Banner */}
+        <Image src={CPS1_PATH} style={styles.headerImage} />
         <View style={styles.header}>
-          <Text style={styles.companyName}>CPS MAROUA</Text>
           <Text style={styles.title}>Bon de Sortie Pièces (Picklist)</Text>
           <Text style={styles.subtitle}>N° {picklist.numeroPicklist}</Text>
         </View>
@@ -86,10 +86,13 @@ export function PicklistPdf({ data }: { data: any }) {
         </View>
 
         {/* Footer */}
-        <Text style={styles.footer}>
-          CPS MAROUA — Picklist {picklist.numeroPicklist} — Généré le{" "}
-          {formatDate(new Date())}
-        </Text>
+        <View style={styles.footerContainer} fixed>
+          <Image src={CPS2_PATH} style={styles.footerImage} />
+          <Text style={styles.footer}>
+            CPS MAROUA — Picklist {picklist.numeroPicklist} — Généré le{" "}
+            {formatDate(new Date())}
+          </Text>
+        </View>
       </Page>
     </Document>
   );

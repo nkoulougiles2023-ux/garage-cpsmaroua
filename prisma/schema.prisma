@@ -80,6 +80,12 @@ enum TypeMouvement {
   SORTIE
 }
 
+enum StatutMouvement {
+  EN_ATTENTE
+  VALIDE
+  REJETE
+}
+
 model User {
   id            String    @id @default(cuid())
   nom           String
@@ -96,6 +102,7 @@ model User {
   client             Client?
   ordresCreated      OrdreReparation[]
   mouvementsStock    MouvementStock[]
+  validationsMouvement MouvementStock[] @relation("validationsMouvement")
 }
 
 model Client {
@@ -229,17 +236,21 @@ model PicklistItem {
 }
 
 model MouvementStock {
-  id              String        @id @default(cuid())
+  id              String          @id @default(cuid())
   pieceId         String
-  piece           Piece         @relation(fields: [pieceId], references: [id])
+  piece           Piece           @relation(fields: [pieceId], references: [id])
   type            TypeMouvement
   quantite        Int
   picklistId      String?
-  picklist        Picklist?     @relation(fields: [picklistId], references: [id])
+  picklist        Picklist?       @relation(fields: [picklistId], references: [id])
   motif           String?
+  statutValidation StatutMouvement @default(EN_ATTENTE)
+  valideParId     String?
+  validePar       User?           @relation("validationsMouvement", fields: [valideParId], references: [id])
+  dateValidation  DateTime?
   effectueParId   String
-  effectuePar     User          @relation(fields: [effectueParId], references: [id])
-  date            DateTime      @default(now())
+  effectuePar     User            @relation(fields: [effectueParId], references: [id])
+  date            DateTime        @default(now())
 }
 
 model FicheCloture {
