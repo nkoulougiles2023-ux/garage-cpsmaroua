@@ -24,7 +24,7 @@ import { ValidateStockEntryButtons } from "@/components/controleur/validate-stoc
 export default async function ControleurPage() {
   await requireRole(["ADMIN", "CONTROLEUR"]);
 
-  const [stats, ordres, picklists, pendingEntries] = await Promise.all([
+  const [stats, ordres, picklists, pendingEntries]: [Awaited<ReturnType<typeof getControleurStats>>, Awaited<ReturnType<typeof getOrdresByStatut>>, Awaited<ReturnType<typeof getPicklistsToSign>>, Awaited<ReturnType<typeof getPendingStockEntries>>] = await Promise.all([
     getControleurStats(),
     getOrdresByStatut(),
     getPicklistsToSign(),
