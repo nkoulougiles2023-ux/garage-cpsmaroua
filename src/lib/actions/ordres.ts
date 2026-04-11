@@ -56,9 +56,12 @@ export async function createOrdreReparation(data: unknown) {
   return { data: ordre };
 }
 
-export async function getOrdres(statut?: StatutOR) {
+export async function getOrdres(statut?: StatutOR | StatutOR[]) {
+  const where = statut
+    ? { statut: Array.isArray(statut) ? { in: statut } : statut }
+    : undefined;
   return db.ordreReparation.findMany({
-    where: statut ? { statut } : undefined,
+    where,
     include: {
       vehicle: { include: { client: true } },
       pannes: true,

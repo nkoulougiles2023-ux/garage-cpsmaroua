@@ -5,7 +5,7 @@ import { PicklistForm } from "@/components/picklists/picklist-form";
 
 export default async function NouveauPicklistPage() {
   await requireRole(["ADMIN", "CONTROLEUR"]);
-  const ordres = await getOrdres(StatutOR.EN_COURS);
+  const ordres = await getOrdres([StatutOR.EN_ATTENTE, StatutOR.EN_COURS]);
 
   const ordreOptions = ordres.map((o) => ({
     id: o.id,
