@@ -24,7 +24,7 @@ import { ValidateStockEntryButtons } from "@/components/controleur/validate-stoc
 export default async function ControleurPage() {
   await requireRole(["ADMIN", "CONTROLEUR"]);
 
-  const [stats, ordres, picklists, pendingEntries]: [Awaited<ReturnType<typeof getControleurStats>>, Awaited<ReturnType<typeof getOrdresByStatut>>, Awaited<ReturnType<typeof getPicklistsToSign>>, Awaited<ReturnType<typeof getPendingStockEntries>>] = await Promise.all([
+  const [stats, ordres, picklists, pendingEntries] = await Promise.all([
     getControleurStats(),
     getOrdresByStatut(),
     getPicklistsToSign(),
@@ -138,7 +138,7 @@ export default async function ControleurPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {pendingEntries.map((entry) => (
+              {pendingEntries.map((entry: { id: string; quantite: number; date: Date; motif: string | null; piece: { codeBarre: string; designation: string }; effectuePar: { nom: string; prenom: string } }) => (
                 <div
                   key={entry.id}
                   className="flex items-center justify-between rounded-lg border p-3"
