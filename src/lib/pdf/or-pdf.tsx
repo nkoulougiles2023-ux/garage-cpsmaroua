@@ -245,9 +245,15 @@ export function OrPdf({ data }: { data: any }) {
         {/* Signatures */}
         <View style={styles.signatureArea}>
           <View style={styles.signatureBox}>
+            {or.signatureChauffeur && (
+              <Image src={or.signatureChauffeur} style={styles.signatureImage} />
+            )}
             <Text>Signature Chauffeur</Text>
           </View>
           <View style={styles.signatureBox}>
+            {or.signatureControleur && (
+              <Image src={or.signatureControleur} style={styles.signatureImage} />
+            )}
             <Text>Signature Contrôleur</Text>
           </View>
         </View>

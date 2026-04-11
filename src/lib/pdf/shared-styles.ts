@@ -69,6 +69,11 @@ export const styles = StyleSheet.create({
     paddingTop: 4,
     textAlign: "center",
   },
+  signatureImage: {
+    height: 40,
+    marginBottom: 2,
+    objectFit: "contain",
+  },
   footerContainer: {
     position: "absolute",
     bottom: 10,

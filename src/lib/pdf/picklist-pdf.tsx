@@ -78,10 +78,22 @@ export function PicklistPdf({ data }: { data: any }) {
         {/* Signatures */}
         <View style={styles.signatureArea}>
           <View style={styles.signatureBox}>
-            <Text>Signature Mécanicien</Text>
+            {picklist.signatureControleur && (
+              <Image
+                src={picklist.signatureControleur}
+                style={styles.signatureImage}
+              />
+            )}
+            <Text>Signature Contrôleur</Text>
           </View>
           <View style={styles.signatureBox}>
-            <Text>Signature Contrôleur</Text>
+            {picklist.signatureAdmin && (
+              <Image
+                src={picklist.signatureAdmin}
+                style={styles.signatureImage}
+              />
+            )}
+            <Text>Signature Admin</Text>
           </View>
         </View>
 
