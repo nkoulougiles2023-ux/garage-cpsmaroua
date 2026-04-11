@@ -1,7 +1,7 @@
-# Session 1 — Picklist Bug + Impression OR/Picklist
+# Session 1 — Picklist Bug + Impression OR/Picklist + Catalogue Tâches
 
 **Date :** 2026-04-11
-**Périmètre :** 3 chantiers liés au flux OR / picklist
+**Périmètre :** 4 chantiers liés au flux OR / picklist / facture
 **Hors périmètre (session future) :** mot de passe oublié, chat privé/public, purge chat 24h
 
 ## Contexte
@@ -184,16 +184,155 @@ Au-delà de 45 lignes (cas extrême), le format reste `dense` et accepte un déb
 
 ---
 
+---
+
+## Chantier 4 — Catalogue de tâches → calcul auto de la facture
+
+### Contexte
+
+Le fichier `Image/DESCRIPTION DES TACHES AVEC LES HEURES ALADJ.xlsx` (2590 lignes) contient le référentiel des tâches du garage avec leur durée standard. Aujourd'hui, la facture est calculée à partir de :
+- `montantPieces` (somme des picklist items)
+- `montantMainOeuvre` (basé sur les `Intervention` saisies à la main par le contrôleur, avec heures et taux libres)
+
+Cette saisie libre est source d'erreurs. L'objectif : associer **chaque ligne de picklist à une tâche du catalogue**, ce qui auto-remplit les heures et permet de calculer la main d'œuvre **sans erreur**.
+
+### Décisions de conception (validées par l'utilisateur)
+
+- **Mapping pièce ↔ tâche → Option C :** chaque ligne de picklist contient `pieceId` + `tacheId` (la tâche est sélectionnée par le contrôleur lors de la création du picklist)
+- **Taux horaire → niveau picklist :** un seul taux saisi à la création du picklist, appliqué à toutes les lignes (évite la saisie ligne par ligne)
+
+### Structure des données (Excel)
+
+| Champ | Valeurs |
+|---|---|
+| `DESCRIPTION` | Nom de la tâche (libellé en MAJUSCULES) |
+| `CATEGORIE` | Repair (1997) / Light Vehicle (217) / Service (130) / Autre (94) / Heavy Duty (56) / Generator (42) / Motor bike (26) / Accident (7) / VL (1) / *(20 lignes sans catégorie)* |
+| `HEURE` | Nombre d'heures (1, 0.5, 2, 5…), ou la valeur littérale `AD` pour 7 tâches « Accident » signifiant « à devis » (heures à saisir manuellement), ou null (1 ligne) |
+
+### Modifications du schéma Prisma
+
+```prisma
+model TacheCatalogue {
+  id          String   @id @default(cuid())
+  description String
+  categorie   String?
+  heuresStd   Decimal? // null si "AD" (à devis) — saisie manuelle requise
+  createdAt   DateTime @default(now())
+
+  picklistItems PicklistItem[]
+
+  @@index([description])
+  @@index([categorie])
+}
+
+model Picklist {
+  // ...champs existants...
+  tauxHoraire        Int  @default(0) // FCFA/h, saisi à la création
+  montantPieces      Int  @default(0) // sous-total pièces
+  montantMainOeuvre  Int  @default(0) // Σ(heures × tauxHoraire)
+  // montantTotal devient = montantPieces + montantMainOeuvre
+}
+
+model PicklistItem {
+  // ...champs existants...
+  tacheId           String?         // optionnel → Option C, mais doit être renseigné pour facturation
+  tache             TacheCatalogue? @relation(fields: [tacheId], references: [id])
+  heuresMainOeuvre  Decimal         @default(0) // SNAPSHOT à la création (figé même si catalogue modifié plus tard)
+}
+```
+
+**Pourquoi un snapshot `heuresMainOeuvre` sur l'item :** si on modifie plus tard `TacheCatalogue.heuresStd`, les picklists déjà créés ne doivent PAS changer rétroactivement (intégrité comptable).
+
+### Migration & Seed
+
+1. **Migration Prisma** : `add_tache_catalogue_and_picklist_pricing`
+2. **Script de seed** `prisma/seed-tache-catalogue.ts` qui :
+   - Lit `Image/DESCRIPTION DES TACHES AVEC LES HEURES ALADJ.xlsx` via la lib `xlsx` (npm package, ajouter en devDependency)
+   - Pour chaque ligne valide : `description` non vide → upsert dans `TacheCatalogue`
+   - Si `HEURE === "AD"` ou null → `heuresStd = null`
+   - Sinon `heuresStd = parseFloat(...)` 
+   - Idempotent : peut être ré-exécuté sans dupliquer (clé d'unicité = description normalisée en MAJ + categorie)
+
+### Modifications côté server actions
+
+**`src/lib/actions/picklists.ts`** :
+- `createPicklist` accepte désormais `tauxHoraire: number` et `items: { pieceId, quantite, prixUnitaire, tacheId, heuresMainOeuvre }[]`
+- Calcule `montantPieces`, `montantMainOeuvre = Σ(heuresMainOeuvre × tauxHoraire)`, `montantTotal = montantPieces + montantMainOeuvre`
+- Si une ligne a `tacheId` mais pas `heuresMainOeuvre` (cas `AD`), impose une saisie manuelle (validation Zod : `heuresMainOeuvre > 0`)
+
+**Nouveau server action** `src/lib/actions/taches.ts` :
+- `searchTaches(query: string, categorie?: string)` : retourne max 50 résultats, recherche full-text simple sur description (`contains`, case-insensitive)
+
+### Modifications UI — `picklist-form.tsx`
+
+1. **Champ `tauxHoraire`** ajouté en haut du formulaire (Input number, label « Taux horaire (FCFA/h) »)
+2. **Pour chaque ligne ajoutée** (après scan barcode), nouvelle colonne « Tâche » avec un **TaskPicker** :
+   - Composant `TaskPicker` (nouveau) — Combobox base-ui avec recherche serveur (debounce 300ms)
+   - Affiche : `[CATEGORIE] DESCRIPTION — 1.5h`
+   - À la sélection : auto-remplit `heuresMainOeuvre` depuis `tache.heuresStd`
+   - Si `heuresStd === null` (cas AD) : champ heures devient éditable et obligatoire
+3. **Récap en bas** :
+   ```
+   Pièces :         X FCFA
+   Main d'œuvre :   Y FCFA  (Σ heures = N h × taux)
+   Total picklist : Z FCFA
+   ```
+4. **Bouton « Créer le picklist » désactivé** tant que toute ligne n'a pas de tâche assignée
+
+### Impact sur la facture
+
+`src/lib/actions/factures.ts` (à inspecter, peut-être ailleurs) :
+- `Facture.montantPieces` = Σ `Picklist.montantPieces` du même OR
+- `Facture.montantMainOeuvre` = Σ `Picklist.montantMainOeuvre` du même OR
+- **Les `Intervention.heuresTravail` et `Intervention.tauxHoraire` ne sont plus utilisés pour le calcul de la facture** — ils restent au schéma à titre informatif (assignations contrôleur → mécanicien) mais ne nourrissent plus la facture
+- ⚠️ Vérification à faire : si les factures actuelles sont calculées différemment, adapter le code et migrer les anciennes (peut-être recalculer depuis les picklists existants si possible)
+
+### Impact sur l'impression picklist (Chantier 2 & 3)
+
+Le PDF picklist (`src/lib/pdf/picklist-pdf.tsx`) doit afficher 2 sous-tableaux ou enrichir le tableau existant :
+- Colonne « Tâche » + « Heures » par ligne
+- Sous-totaux : Pièces / Main d'œuvre / Total
+
+Cela impacte directement le Chantier 3 (densité 1-page) — il faudra recalibrer les seuils car les colonnes sont plus chargées :
+
+| Preset | Seuil | fontSize |
+|---|---|---|
+| `comfortable` | ≤ 8 lignes | 10pt |
+| `compact` | 9–18 lignes | 8.5pt |
+| `dense` | 19–35 lignes | 7pt |
+
+### Critères d'acceptation
+
+- Le seed importe les ~2570 tâches valides du fichier Excel sans erreur (et ignore les lignes vides/invalides)
+- Le contrôleur peut chercher une tâche dans le picker en tapant des mots-clés (« filtre huile » → trouve « RENOUVELER LE FILTRE A HUILE »)
+- À la sélection d'une tâche, les heures s'affichent automatiquement
+- Pour une tâche `AD`, le contrôleur doit saisir les heures manuellement, sinon il ne peut pas valider
+- Le total picklist = pièces + main d'œuvre, calculé sans intervention de l'utilisateur
+- La facture générée pour un OR additionne correctement tous les picklists (pièces + main d'œuvre)
+- Modifier `TacheCatalogue.heuresStd` après coup ne modifie PAS un picklist déjà créé
+
+---
+
 ## Fichiers touchés (récapitulatif)
 
-| Fichier | C1 | C2 | C3 |
-|---|---|---|---|
-| `src/lib/actions/ordres.ts` | ✅ | | |
-| `src/app/(app)/picklists/nouveau/page.tsx` | ✅ | | |
-| `src/lib/pdf/or-pdf.tsx` | | ✅ | ✅ |
-| `src/lib/pdf/picklist-pdf.tsx` | | ✅ | ✅ |
-| `src/lib/pdf/shared-styles.ts` | | ✅ | ✅ |
-| `src/app/api/pdf/[type]/[id]/route.ts` | | ✅ (vérif) | |
+| Fichier | C1 | C2 | C3 | C4 |
+|---|---|---|---|---|
+| `src/lib/actions/ordres.ts` | ✅ | | | |
+| `src/app/(app)/picklists/nouveau/page.tsx` | ✅ | | | ✅ (catalogue) |
+| `src/lib/pdf/or-pdf.tsx` | | ✅ | ✅ | |
+| `src/lib/pdf/picklist-pdf.tsx` | | ✅ | ✅ | ✅ (colonnes tâche) |
+| `src/lib/pdf/shared-styles.ts` | | ✅ | ✅ | |
+| `src/app/api/pdf/[type]/[id]/route.ts` | | ✅ (vérif) | | |
+| `prisma/schema.prisma` | | | | ✅ |
+| `prisma/migrations/<new>/migration.sql` | | | | ✅ |
+| `prisma/seed-tache-catalogue.ts` (nouveau) | | | | ✅ |
+| `src/lib/actions/picklists.ts` | | | | ✅ |
+| `src/lib/actions/taches.ts` (nouveau) | | | | ✅ |
+| `src/lib/actions/factures.ts` | | | | ✅ |
+| `src/components/picklists/picklist-form.tsx` | | | | ✅ |
+| `src/components/picklists/task-picker.tsx` (nouveau) | | | | ✅ |
+| `src/lib/validators/picklist.ts` | | | | ✅ |
+| `package.json` (ajout `xlsx`) | | | | ✅ |
 
 ---
 
@@ -202,6 +341,7 @@ Au-delà de 45 lignes (cas extrême), le format reste `dense` et accepte un déb
 1. **Chantier 1** — créer un OR avec compte réception, se connecter en contrôleur, ouvrir `/picklists/nouveau`, vérifier que l'OR apparaît dans le dropdown même s'il est `EN_ATTENTE`
 2. **Chantier 2** — signer un OR (chauffeur) puis générer le PDF — la signature doit apparaître. Idem pour picklist signé par contrôleur + admin
 3. **Chantier 3** — générer 3 OR de tailles différentes (petit/moyen/grand) et vérifier que chacun tient sur 1 page avec une densité adaptée
+4. **Chantier 4** — exécuter le seed, vérifier le nombre de tâches importées (~2570). Créer un picklist de test avec 3 pièces + 3 tâches du catalogue + un taux horaire. Vérifier le total = pièces + (heures × taux). Générer la facture de l'OR et vérifier qu'elle reprend ces montants. Modifier ensuite la `heuresStd` d'une tâche dans le catalogue et vérifier que le picklist déjà créé n'a PAS changé.
 
 ---
 
