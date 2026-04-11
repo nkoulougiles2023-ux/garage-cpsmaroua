@@ -10,7 +10,14 @@ import { createNotificationForAllStaff, createNotificationForRole } from "./noti
 export async function createPicklist(data: {
   ordreReparationId: string;
   mecanicienNom: string;
-  items: { pieceId: string; quantite: number; prixUnitaire: number }[];
+  tauxHoraire: number;
+  items: {
+    pieceId: string;
+    quantite: number;
+    prixUnitaire: number;
+    tacheId?: string | null;
+    heuresMainOeuvre?: number;
+  }[];
 }) {
   const session = await auth();
   if (!session?.user) return { error: "Non autorisé" };
@@ -19,24 +26,43 @@ export async function createPicklist(data: {
     return { error: "Seul le contrôleur peut créer un picklist" };
   }
 
+  if (!Number.isFinite(data.tauxHoraire) || data.tauxHoraire <= 0) {
+    return { error: "Taux horaire invalide" };
+  }
+
   const numeroPicklist = await generateNumeroPicklist();
-  const montantTotal = data.items.reduce((sum, item) => sum + item.quantite * item.prixUnitaire, 0);
+
+  const montantPieces = data.items.reduce(
+    (sum, item) => sum + item.quantite * item.prixUnitaire,
+    0
+  );
+  const totalHeures = data.items.reduce(
+    (sum, item) => sum + (item.heuresMainOeuvre ?? 0),
+    0
+  );
+  const montantMainOeuvre = Math.round(totalHeures * data.tauxHoraire);
+  const montantTotal = montantPieces + montantMainOeuvre;
 
   const picklist = await db.picklist.create({
     data: {
       numeroPicklist,
       ordreReparationId: data.ordreReparationId,
       mecanicienNom: data.mecanicienNom,
+      tauxHoraire: data.tauxHoraire,
+      montantPieces,
+      montantMainOeuvre,
       montantTotal,
       items: {
         create: data.items.map((item) => ({
           pieceId: item.pieceId,
           quantite: item.quantite,
           prixUnitaire: item.prixUnitaire,
+          tacheId: item.tacheId ?? null,
+          heuresMainOeuvre: item.heuresMainOeuvre ?? 0,
         })),
       },
     },
-    include: { items: { include: { piece: true } } },
+    include: { items: { include: { piece: true, tache: true } } },
   });
 
   revalidatePath("/picklists");
@@ -155,7 +181,7 @@ export async function getPicklists(statut?: StatutPicklist) {
     where: statut ? { statut } : undefined,
     include: {
       ordreReparation: { select: { numeroOR: true } },
-      items: { include: { piece: true } },
+      items: { include: { piece: true, tache: true } },
     },
     orderBy: { createdAt: "desc" },
   });

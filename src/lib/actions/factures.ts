@@ -18,7 +18,13 @@ export async function createFacture(ordreReparationId: string) {
 
   if (!ordre) return { error: "OR non trouvé" };
 
-  const montantPieces = ordre.picklists.reduce((sum, pk) => sum + pk.montantTotal, 0);
+  // Pieces come from picklists (montantPieces excludes catalogue labour to avoid
+  // double-counting; legacy picklists fall back to montantTotal).
+  const montantPieces = ordre.picklists.reduce(
+    (sum, pk) => sum + (pk.montantPieces || pk.montantTotal),
+    0
+  );
+  // Labour is the authoritative sum of interventions × fixed rate.
   const montantMainOeuvre = ordre.interventions.reduce(
     (sum, int) =>
       sum +

@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Search } from "lucide-react";
 import { getPieceByBarcode } from "@/lib/actions/pieces";
 import { createPicklist } from "@/lib/actions/picklists";
+import { TaskPicker } from "./task-picker";
+import type { TacheOption } from "@/lib/actions/taches";
 
 interface OrdreOption {
   id: string;
@@ -31,12 +33,17 @@ interface PieceItem {
   prixUnitaire: number;
   quantite: number;
   stockDisponible: number;
+  tache: TacheOption | null;
+  heuresMainOeuvre: number;
 }
+
+const DEFAULT_TAUX_HORAIRE = 10000;
 
 export function PicklistForm({ ordres }: { ordres: OrdreOption[] }) {
   const router = useRouter();
   const [ordreId, setOrdreId] = React.useState("");
   const [mecanicien, setMecanicien] = React.useState("");
+  const [tauxHoraire, setTauxHoraire] = React.useState(DEFAULT_TAUX_HORAIRE);
   const [barcode, setBarcode] = React.useState("");
   const [items, setItems] = React.useState<PieceItem[]>([]);
   const [searching, setSearching] = React.useState(false);
@@ -69,6 +76,8 @@ export function PicklistForm({ ordres }: { ordres: OrdreOption[] }) {
           prixUnitaire: piece.prixUnitaire,
           quantite: 1,
           stockDisponible: piece.quantiteEnStock,
+          tache: null,
+          heuresMainOeuvre: 0,
         }]);
       }
       setBarcode("");
@@ -85,19 +94,54 @@ export function PicklistForm({ ordres }: { ordres: OrdreOption[] }) {
     }
   }
 
-  function updateQuantite(pieceId: string, qty: number) {
-    if (qty < 1) return;
-    setItems(items.map((i) => i.pieceId === pieceId ? { ...i, quantite: qty } : i));
+  function updateItem(pieceId: string, patch: Partial<PieceItem>) {
+    setItems((prev) =>
+      prev.map((i) => (i.pieceId === pieceId ? { ...i, ...patch } : i))
+    );
   }
 
   function removeItem(pieceId: string) {
     setItems(items.filter((i) => i.pieceId !== pieceId));
   }
 
-  const total = items.reduce((sum, i) => sum + i.prixUnitaire * i.quantite, 0);
+  function handleTacheSelect(pieceId: string, tache: TacheOption | null) {
+    if (!tache) {
+      updateItem(pieceId, { tache: null, heuresMainOeuvre: 0 });
+      return;
+    }
+    updateItem(pieceId, {
+      tache,
+      heuresMainOeuvre: tache.heuresStd ?? 0,
+    });
+  }
+
+  const montantPieces = items.reduce(
+    (sum, i) => sum + i.prixUnitaire * i.quantite,
+    0
+  );
+  const totalHeures = items.reduce((sum, i) => sum + i.heuresMainOeuvre, 0);
+  const montantMainOeuvre = Math.round(totalHeures * tauxHoraire);
+  const montantTotal = montantPieces + montantMainOeuvre;
+
+  const missingTache = items.some((i) => !i.tache);
+  const missingHours = items.some(
+    (i) => i.tache && i.heuresMainOeuvre <= 0
+  );
 
   async function handleSubmit() {
     if (!ordreId || !mecanicien.trim() || items.length === 0) return;
+    if (missingTache) {
+      setError("Chaque pièce doit être associée à une tâche du catalogue.");
+      return;
+    }
+    if (missingHours) {
+      setError("Renseigner le nombre d'heures pour chaque tâche 'à devis'.");
+      return;
+    }
+    if (tauxHoraire <= 0) {
+      setError("Taux horaire invalide.");
+      return;
+    }
     setSubmitting(true);
     setError("");
 
@@ -105,10 +149,13 @@ export function PicklistForm({ ordres }: { ordres: OrdreOption[] }) {
       const result = await createPicklist({
         ordreReparationId: ordreId,
         mecanicienNom: mecanicien.trim(),
+        tauxHoraire,
         items: items.map((i) => ({
           pieceId: i.pieceId,
           quantite: i.quantite,
           prixUnitaire: i.prixUnitaire,
+          tacheId: i.tache?.id ?? null,
+          heuresMainOeuvre: i.heuresMainOeuvre,
         })),
       });
 
@@ -161,6 +208,19 @@ export function PicklistForm({ ordres }: { ordres: OrdreOption[] }) {
               onChange={(e) => setMecanicien(e.target.value)}
             />
           </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="taux">Taux horaire main d&apos;œuvre (FCFA)</Label>
+            <Input
+              id="taux"
+              type="number"
+              min={0}
+              value={tauxHoraire}
+              onChange={(e) => setTauxHoraire(Number(e.target.value) || 0)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Utilisé pour calculer la main d&apos;œuvre de chaque tâche (heures × taux).
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -197,39 +257,110 @@ export function PicklistForm({ ordres }: { ordres: OrdreOption[] }) {
             <CardTitle>Pieces selectionnees ({items.length})</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {items.map((item) => (
-              <div key={item.pieceId} className="flex items-center justify-between rounded-lg border p-3">
-                <div className="flex-1">
-                  <p className="font-medium">{item.designation}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Code: {item.codeBarre} — {item.prixUnitaire.toLocaleString("fr-FR")} FCFA/unite
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Stock: {item.stockDisponible}
-                  </p>
+            {items.map((item) => {
+              const ligneHeures = item.heuresMainOeuvre;
+              const ligneMontantMO = Math.round(ligneHeures * tauxHoraire);
+              const ligneTotal =
+                item.prixUnitaire * item.quantite + ligneMontantMO;
+              const isADevis = item.tache?.heuresStd === null;
+              return (
+                <div
+                  key={item.pieceId}
+                  className="rounded-lg border p-3 space-y-2"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <p className="font-medium">{item.designation}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Code: {item.codeBarre} —{" "}
+                        {item.prixUnitaire.toLocaleString("fr-FR")} FCFA/unité
+                        · Stock: {item.stockDisponible}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeItem(item.pieceId)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                  <div className="grid gap-2 md:grid-cols-[120px_1fr_120px]">
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs">Quantité</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={item.stockDisponible}
+                        value={item.quantite}
+                        onChange={(e) =>
+                          updateItem(item.pieceId, {
+                            quantite: Math.max(1, Number(e.target.value) || 1),
+                          })
+                        }
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs">Tâche associée</Label>
+                      <TaskPicker
+                        selected={item.tache}
+                        onSelect={(t) => handleTacheSelect(item.pieceId, t)}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Label className="text-xs">Heures</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={0.5}
+                        value={item.heuresMainOeuvre}
+                        disabled={!item.tache || (!isADevis && item.tache.heuresStd !== null)}
+                        onChange={(e) =>
+                          updateItem(item.pieceId, {
+                            heuresMainOeuvre: Number(e.target.value) || 0,
+                          })
+                        }
+                        className="h-8"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-end gap-2 text-xs">
+                    <Badge variant="outline">
+                      Pièces: {(item.prixUnitaire * item.quantite).toLocaleString("fr-FR")} FCFA
+                    </Badge>
+                    <Badge variant="outline">
+                      Main d&apos;œuvre: {ligneMontantMO.toLocaleString("fr-FR")} FCFA
+                    </Badge>
+                    <Badge>
+                      Ligne: {ligneTotal.toLocaleString("fr-FR")} FCFA
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={1}
-                    max={item.stockDisponible}
-                    value={item.quantite}
-                    onChange={(e) => updateQuantite(item.pieceId, Number(e.target.value))}
-                    className="w-20 text-center"
-                  />
-                  <Badge variant="outline">
-                    {(item.prixUnitaire * item.quantite).toLocaleString("fr-FR")} FCFA
-                  </Badge>
-                  <Button variant="ghost" size="sm" onClick={() => removeItem(item.pieceId)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
+              );
+            })}
+            <div className="border-t pt-3 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span>Total pièces</span>
+                <span className="font-medium">
+                  {montantPieces.toLocaleString("fr-FR")} FCFA
+                </span>
               </div>
-            ))}
-            <div className="flex justify-end border-t pt-3">
-              <p className="text-lg font-bold">
-                Total: {total.toLocaleString("fr-FR")} FCFA
-              </p>
+              <div className="flex justify-between">
+                <span>
+                  Main d&apos;œuvre ({totalHeures}h ×{" "}
+                  {tauxHoraire.toLocaleString("fr-FR")} FCFA)
+                </span>
+                <span className="font-medium">
+                  {montantMainOeuvre.toLocaleString("fr-FR")} FCFA
+                </span>
+              </div>
+              <div className="flex justify-between border-t pt-2 text-base">
+                <span className="font-bold">Total picklist</span>
+                <span className="font-bold">
+                  {montantTotal.toLocaleString("fr-FR")} FCFA
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -240,7 +371,13 @@ export function PicklistForm({ ordres }: { ordres: OrdreOption[] }) {
         <Button variant="outline" onClick={() => router.back()}>Annuler</Button>
         <Button
           onClick={handleSubmit}
-          disabled={!ordreId || !mecanicien.trim() || items.length === 0 || submitting}
+          disabled={
+            !ordreId ||
+            !mecanicien.trim() ||
+            items.length === 0 ||
+            tauxHoraire <= 0 ||
+            submitting
+          }
         >
           <Plus className="mr-2 h-4 w-4" />
           {submitting ? "Creation..." : "Creer le picklist"}
