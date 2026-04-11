@@ -1,6 +1,13 @@
 import React from "react";
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
-import { styles, formatMontant, formatDate, CPS1_PATH, CPS2_PATH } from "./shared-styles";
+import {
+  getStyles,
+  pickDensity,
+  formatMontant,
+  formatDate,
+  CPS1_PATH,
+  CPS2_PATH,
+} from "./shared-styles";
 import { TAUX_HORAIRE_MAIN_OEUVRE } from "@/lib/constants";
 
 const local = StyleSheet.create({
@@ -43,6 +50,11 @@ export function OrPdf({ data }: { data: any }) {
       Number(int.heuresTravail) * (int.tauxHoraire || TAUX_HORAIRE_MAIN_OEUVRE),
     0
   );
+
+  // Density adapts to total row count so the sheet stays on one A4 page.
+  const rowCount =
+    (or.pannes?.length || 0) + interventions.length + allParts.length;
+  const styles = getStyles(pickDensity(rowCount));
 
   return (
     <Document>

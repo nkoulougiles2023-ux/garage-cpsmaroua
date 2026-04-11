@@ -1,6 +1,13 @@
 import React from "react";
 import { Document, Page, Text, View, Image } from "@react-pdf/renderer";
-import { styles, formatMontant, formatDate, CPS1_PATH, CPS2_PATH } from "./shared-styles";
+import {
+  getStyles,
+  pickDensity,
+  formatMontant,
+  formatDate,
+  CPS1_PATH,
+  CPS2_PATH,
+} from "./shared-styles";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function CloturePdf({ data }: { data: any }) {
@@ -30,6 +37,9 @@ export function CloturePdf({ data }: { data: any }) {
       });
     }
   }
+
+  const rowCount = interventions.length + allParts.length;
+  const styles = getStyles(pickDensity(rowCount));
 
   return (
     <Document>
