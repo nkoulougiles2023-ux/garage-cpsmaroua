@@ -187,7 +187,7 @@ model Intervention {
   section             Section
   description         String
   heuresTravail       Decimal            @default(0)
-  tauxHoraire         Int                @default(0)
+  tauxHoraire         Int                @default(10000)
   statut              StatutIntervention @default(EN_COURS)
   dateDebut           DateTime           @default(now())
   dateFin             DateTime?
@@ -219,6 +219,9 @@ model Picklist {
   signatureControleur   String?
   signatureAdmin        String?
   paiementStatut        StatutPaiementPicklist @default(NON_PAYE)
+  tauxHoraire           Int                   @default(0)
+  montantPieces         Int                   @default(0)
+  montantMainOeuvre     Int                   @default(0)
   montantTotal          Int                   @default(0)
   createdAt             DateTime              @default(now())
 
@@ -228,13 +231,29 @@ model Picklist {
 }
 
 model PicklistItem {
-  id            String    @id @default(cuid())
-  picklistId    String
-  picklist      Picklist  @relation(fields: [picklistId], references: [id])
-  pieceId       String
-  piece         Piece     @relation(fields: [pieceId], references: [id])
-  quantite      Int
-  prixUnitaire  Int
+  id                String          @id @default(cuid())
+  picklistId        String
+  picklist          Picklist        @relation(fields: [picklistId], references: [id])
+  pieceId           String
+  piece             Piece           @relation(fields: [pieceId], references: [id])
+  quantite          Int
+  prixUnitaire      Int
+  tacheId           String?
+  tache             TacheCatalogue? @relation(fields: [tacheId], references: [id])
+  heuresMainOeuvre  Decimal         @default(0)
+}
+
+model TacheCatalogue {
+  id            String         @id @default(cuid())
+  description   String
+  categorie     String         @default("")
+  heuresStd     Decimal?
+  createdAt     DateTime       @default(now())
+
+  picklistItems PicklistItem[]
+
+  @@unique([description, categorie])
+  @@index([categorie])
 }
 
 model MouvementStock {
@@ -261,6 +280,7 @@ model FicheCloture {
   ordreReparationId     String          @unique
   ordreReparation       OrdreReparation @relation(fields: [ordreReparationId], references: [id])
   signatureControleur   String?
+  signatureAdmin        String?
   dateGeneration        DateTime        @default(now())
 }
 

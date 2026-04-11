@@ -3,15 +3,17 @@
 import { db } from "@/lib/db";
 import { Section, StatutIntervention } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { TAUX_HORAIRE_MAIN_OEUVRE } from "@/lib/constants";
 
 export async function createIntervention(data: {
   ordreReparationId: string;
   mecanicienNom: string;
   section: Section;
   description: string;
-  tauxHoraire: number;
 }) {
-  const intervention = await db.intervention.create({ data });
+  const intervention = await db.intervention.create({
+    data: { ...data, tauxHoraire: TAUX_HORAIRE_MAIN_OEUVRE },
+  });
   revalidatePath(`/ordres/${data.ordreReparationId}`);
   return { data: intervention };
 }

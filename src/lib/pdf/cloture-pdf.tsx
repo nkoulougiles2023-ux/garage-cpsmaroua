@@ -148,10 +148,22 @@ export function CloturePdf({ data }: { data: any }) {
         {/* Signatures */}
         <View style={styles.signatureArea}>
           <View style={styles.signatureBox}>
+            {cloture.signatureControleur && (
+              <Image
+                src={cloture.signatureControleur}
+                style={styles.signatureImage}
+              />
+            )}
             <Text>Signature Contrôleur</Text>
           </View>
           <View style={styles.signatureBox}>
-            <Text>Signature Responsable</Text>
+            {cloture.signatureAdmin && (
+              <Image
+                src={cloture.signatureAdmin}
+                style={styles.signatureImage}
+              />
+            )}
+            <Text>Signature Admin</Text>
           </View>
         </View>
 

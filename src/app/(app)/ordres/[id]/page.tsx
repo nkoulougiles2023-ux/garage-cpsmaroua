@@ -13,6 +13,7 @@ import { FacturePaymentButton } from "@/components/payments/facture-payment-butt
 import { AcompteDialog } from "@/components/payments/acompte-dialog";
 import { CreateInterventionDialog } from "@/components/controleur/create-intervention-dialog";
 import { ClotureDialog } from "@/components/controleur/cloture-dialog";
+import { SignClotureAdmin } from "@/components/admin/sign-cloture-admin";
 import {
   StatutOR, StatutPanne, StatutPicklist,
   StatutPaiementPicklist, StatutIntervention,
@@ -69,19 +70,32 @@ export default async function OrdreDetailPage({ params }: Props) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{ordre.numeroOR}</h1>
-          <p className="text-muted-foreground">
-            {vehicle.marque} {vehicle.modele} — {vehicle.matricule}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">{ordre.numeroOR}</h1>
+            <p className="text-muted-foreground">
+              {vehicle.marque} {vehicle.modele} — {vehicle.matricule}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className={statutORColors[ordre.statut]}>{ordre.statut.replace("_", " ")}</Badge>
+            {ordre.signatureChauffeur ? (
+              <Button nativeButton={false} variant="outline" size="sm" render={<Link href={`/api/pdf/or/${ordre.id}`} target="_blank" />}>
+                <Download className="mr-1 h-4 w-4" /> PDF OR
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" disabled title="Signature chauffeur requise avant l'impression">
+                <Download className="mr-1 h-4 w-4" /> PDF OR
+              </Button>
+            )}
+          </div>
+        </div>
+        {!ordre.signatureChauffeur && (
+          <p className="text-xs text-destructive text-right">
+            Signature chauffeur requise pour authentifier et imprimer la fiche OR.
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge className={statutORColors[ordre.statut]}>{ordre.statut.replace("_", " ")}</Badge>
-          <Button nativeButton={false} variant="outline" size="sm" render={<Link href={`/api/pdf/or/${ordre.id}`} target="_blank" />}>
-            <Download className="mr-1 h-4 w-4" /> PDF OR
-          </Button>
-        </div>
+        )}
       </div>
 
       <Separator />
@@ -322,14 +336,27 @@ export default async function OrdreDetailPage({ params }: Props) {
       {/* Fiche de cloture */}
       {ordre.ficheCloture && (
         <Card>
-          <CardContent className="flex items-center justify-between py-4">
-            <div>
+          <CardContent className="flex items-center justify-between py-4 gap-4 flex-wrap">
+            <div className="space-y-1">
               <p className="font-medium">Fiche de Cloture — {ordre.ficheCloture.numeroCloture}</p>
               <p className="text-xs text-muted-foreground">{new Date(ordre.ficheCloture.dateGeneration).toLocaleDateString("fr-FR")}</p>
+              <p className="text-xs">
+                Signature admin :{" "}
+                {ordre.ficheCloture.signatureAdmin ? (
+                  <span className="font-medium text-green-700">signée</span>
+                ) : (
+                  <span className="italic text-muted-foreground">en attente</span>
+                )}
+              </p>
             </div>
-            <Button nativeButton={false} variant="outline" size="sm" render={<Link href={`/api/pdf/cloture/${ordre.ficheCloture.id}`} target="_blank" />}>
-              <Download className="mr-1 h-4 w-4" /> PDF
-            </Button>
+            <div className="flex items-center gap-2">
+              {role === "ADMIN" && !ordre.ficheCloture.signatureAdmin && (
+                <SignClotureAdmin ficheId={ordre.ficheCloture.id} />
+              )}
+              <Button nativeButton={false} variant="outline" size="sm" render={<Link href={`/api/pdf/cloture/${ordre.ficheCloture.id}`} target="_blank" />}>
+                <Download className="mr-1 h-4 w-4" /> PDF
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}

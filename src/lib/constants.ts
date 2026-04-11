@@ -1,0 +1,1 @@
+export const TAUX_HORAIRE_MAIN_OEUVRE = 10000;

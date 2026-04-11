@@ -1,6 +1,7 @@
 import React from "react";
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import { styles, formatMontant, formatDate, CPS1_PATH, CPS2_PATH } from "./shared-styles";
+import { TAUX_HORAIRE_MAIN_OEUVRE } from "@/lib/constants";
 
 const local = StyleSheet.create({
   twoCol: { flexDirection: "row", gap: 12, marginBottom: 8 },
@@ -34,6 +35,14 @@ export function OrPdf({ data }: { data: any }) {
       allParts.push({ ...item, picklistNumero: picklist.numeroPicklist });
     }
   }
+
+  // Labour total: Σ(hours × rate), fallback to fixed rate if stored rate is 0
+  const totalMainOeuvre = interventions.reduce(
+    (sum: number, int: any) =>
+      sum +
+      Number(int.heuresTravail) * (int.tauxHoraire || TAUX_HORAIRE_MAIN_OEUVRE),
+    0
+  );
 
   return (
     <Document>
@@ -207,6 +216,14 @@ export function OrPdf({ data }: { data: any }) {
                   <Text style={styles.col5}>{int.statut}</Text>
                 </View>
               ))}
+            </View>
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>
+                Total main d&apos;œuvre ({formatMontant(TAUX_HORAIRE_MAIN_OEUVRE)}/h) :
+              </Text>
+              <Text style={styles.totalValue}>
+                {formatMontant(totalMainOeuvre)}
+              </Text>
             </View>
           </View>
         )}

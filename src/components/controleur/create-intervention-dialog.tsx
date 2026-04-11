@@ -43,7 +43,6 @@ export function CreateInterventionDialog({
   const [section, setSection] = React.useState<Section | "">("");
   const [mecanicienNom, setMecanicienNom] = React.useState("");
   const [description, setDescription] = React.useState("");
-  const [tauxHoraire, setTauxHoraire] = React.useState(5000);
   const [loading, setLoading] = React.useState(false);
 
   async function handleCreate() {
@@ -55,13 +54,11 @@ export function CreateInterventionDialog({
         mecanicienNom: mecanicienNom.trim(),
         section: section as Section,
         description: description.trim(),
-        tauxHoraire,
       });
       setOpen(false);
       setSection("");
       setMecanicienNom("");
       setDescription("");
-      setTauxHoraire(5000);
       router.refresh();
     } finally {
       setLoading(false);
@@ -115,15 +112,9 @@ export function CreateInterventionDialog({
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="tauxHoraire">Taux horaire (FCFA)</Label>
-            <Input
-              id="tauxHoraire"
-              type="number"
-              value={tauxHoraire}
-              onChange={(e) => setTauxHoraire(Number(e.target.value))}
-            />
-          </div>
+          <p className="text-xs text-muted-foreground">
+            Taux horaire main d&apos;œuvre : 10 000 FCFA (fixe)
+          </p>
         </div>
         <div className="-mx-4 -mb-4 flex justify-end gap-2 rounded-b-xl border-t bg-muted/50 p-4">
           <Button

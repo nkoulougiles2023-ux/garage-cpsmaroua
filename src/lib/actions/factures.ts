@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { generateNumeroFacture } from "@/lib/utils/numbering";
 import { revalidatePath } from "next/cache";
+import { TAUX_HORAIRE_MAIN_OEUVRE } from "@/lib/constants";
 
 export async function createFacture(ordreReparationId: string) {
   const ordre = await db.ordreReparation.findUnique({
@@ -19,7 +20,10 @@ export async function createFacture(ordreReparationId: string) {
 
   const montantPieces = ordre.picklists.reduce((sum, pk) => sum + pk.montantTotal, 0);
   const montantMainOeuvre = ordre.interventions.reduce(
-    (sum, int) => sum + Number(int.heuresTravail) * int.tauxHoraire, 0
+    (sum, int) =>
+      sum +
+      Number(int.heuresTravail) * (int.tauxHoraire || TAUX_HORAIRE_MAIN_OEUVRE),
+    0
   );
   const montantTotal = montantPieces + montantMainOeuvre;
   const montantPaye = ordre.paiements.reduce((sum, p) => sum + p.montant, 0);
