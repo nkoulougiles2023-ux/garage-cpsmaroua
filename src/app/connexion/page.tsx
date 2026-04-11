@@ -41,9 +41,12 @@ export default function ConnexionPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-xl">
-            CPS
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/CPS1.png"
+            alt="CPS Maroua"
+            className="mx-auto mb-4 h-24 w-auto object-contain"
+          />
           <CardTitle className="text-2xl">CPS Maroua</CardTitle>
           <p className="text-sm text-muted-foreground">
             Connectez-vous à votre compte
