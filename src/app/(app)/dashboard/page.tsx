@@ -39,9 +39,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">
-        {role === "CONTROLEUR" ? "Panneau de Commandes" : "Tableau de Bord"}
-      </h1>
+      <h1 className="text-2xl font-bold">Tableau de Bord</h1>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
