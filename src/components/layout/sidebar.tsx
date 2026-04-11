@@ -44,10 +44,9 @@ const navByRole: Record<string, NavItem[]> = {
   RECEPTIONNISTE: [
     { label: "Tableau de bord", href: "/reception/dashboard", icon: LayoutDashboard },
     { label: "Nouvelle réception", href: "/reception/nouveau", icon: Car },
+    { label: "Véhicules", href: "/vehicules", icon: Car },
     { label: "Ordres de réparation", href: "/ordres", icon: ClipboardList },
     { label: "Picklists", href: "/picklists", icon: FileText },
-    { label: "Paiements", href: "/paiements", icon: CreditCard },
-    { label: "Factures", href: "/factures", icon: FileText },
   ],
   MAGASINIER: [
     { label: "Tableau de bord", href: "/magasin/dashboard", icon: LayoutDashboard },

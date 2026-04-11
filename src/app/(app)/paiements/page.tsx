@@ -23,7 +23,7 @@ const typeBadgeColors: Record<string, string> = {
 };
 
 export default async function PaiementsPage() {
-  await requireRole(["ADMIN", "RECEPTIONNISTE", "CONTROLEUR"]);
+  await requireRole(["ADMIN", "CONTROLEUR"]);
   const paiements = await getPaiements();
 
   return (

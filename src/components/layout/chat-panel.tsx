@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useTransition } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { MessageCircle, Send, X, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getMessages, sendMessage } from "@/lib/actions/chat";
@@ -33,42 +33,46 @@ export function ChatPanel({ currentUserId }: { currentUserId: string }) {
   const [minimized, setMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const loadMessages = () => {
-    startTransition(async () => {
+  const loadMessages = useCallback(async () => {
+    try {
       const msgs = await getMessages();
       setMessages(msgs.reverse());
-    });
-  };
+    } catch {
+      // silently ignore polling errors
+    }
+  }, []);
 
   useEffect(() => {
     if (open && !minimized) {
       loadMessages();
-      // Poll for new messages every 5 seconds
       const interval = setInterval(loadMessages, 5000);
       return () => clearInterval(interval);
     }
-  }, [open, minimized]);
+  }, [open, minimized, loadMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
+    if (!input.trim() || isSending) return;
     const content = input.trim();
     setInput("");
+    setIsSending(true);
 
-    startTransition(async () => {
+    try {
       const result = await sendMessage(content);
       if (result.data) {
         setMessages((prev) => [...prev, result.data as Message]);
       }
+    } finally {
+      setIsSending(false);
       inputRef.current?.focus();
-    });
+    }
   };
 
   if (!open) {
@@ -185,12 +189,12 @@ export function ChatPanel({ currentUserId }: { currentUserId: string }) {
             placeholder="Votre message..."
             className="flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
             maxLength={1000}
-            disabled={isPending}
+            disabled={isSending}
           />
           <Button
             type="submit"
             size="icon"
-            disabled={!input.trim() || isPending}
+            disabled={!input.trim() || isSending}
             className="h-9 w-9"
           >
             <Send className="h-4 w-4" />

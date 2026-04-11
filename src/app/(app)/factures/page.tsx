@@ -8,7 +8,7 @@ import { FileText, Receipt } from "lucide-react";
 import { FacturePaymentButton } from "@/components/payments/facture-payment-button";
 
 export default async function FacturesPage() {
-  await requireRole(["ADMIN", "RECEPTIONNISTE", "CONTROLEUR"]);
+  await requireRole(["ADMIN", "CONTROLEUR"]);
   const factures = await getFactures();
 
   return (
