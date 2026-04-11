@@ -138,7 +138,7 @@ export default async function ControleurPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {pendingEntries.map((entry: { id: string; quantite: number; date: Date; motif: string | null; piece: { codeBarre: string; designation: string }; effectuePar: { nom: string; prenom: string } }) => (
+              {pendingEntries.map((entry) => (
                 <div
                   key={entry.id}
                   className="flex items-center justify-between rounded-lg border p-3"
