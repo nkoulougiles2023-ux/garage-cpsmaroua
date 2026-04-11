@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ClipboardList, Car, Package, CreditCard } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { StatutOR } from "@prisma/client";
 
 const statutColors: Record<StatutOR, string> = {
@@ -21,6 +22,14 @@ const statutLabels: Record<StatutOR, string> = {
 export default async function DashboardPage() {
   const session = await requireAuth();
   const role = (session.user as any).role as string;
+
+  // Tableau de bord admin réservé : redirige chaque rôle vers son propre dashboard
+  if (role === "MAGASINIER") redirect("/magasin/dashboard");
+  if (role === "RECEPTIONNISTE") redirect("/reception/dashboard");
+  if (role === "CONTROLEUR") redirect("/controleur");
+  if (role === "CLIENT") redirect("/mes-reparations");
+  if (role !== "ADMIN") redirect("/non-autorise");
+
   const stats = await getDashboardStats();
 
   const currentMonth = new Date().toLocaleDateString("fr-FR", {
