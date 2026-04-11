@@ -5,6 +5,7 @@ import { generateNumeroPicklist } from "@/lib/utils/numbering";
 import { StatutPicklist, StatutPaiementPicklist } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { createNotificationForAllStaff, createNotificationForRole } from "./notifications";
 
 export async function createPicklist(data: {
   ordreReparationId: string;
@@ -40,6 +41,15 @@ export async function createPicklist(data: {
 
   revalidatePath("/picklists");
   revalidatePath(`/ordres/${data.ordreReparationId}`);
+
+  // Notify all staff about new picklist
+  await createNotificationForAllStaff(
+    "Nouveau picklist créé",
+    `Picklist ${numeroPicklist} — ${data.items.length} pièce(s), ${montantTotal.toLocaleString("fr-FR")} FCFA`,
+    `/picklists`,
+    session.user.id!
+  );
+
   return { data: picklist };
 }
 
@@ -60,6 +70,15 @@ export async function approvePicklist(picklistId: string, signature: string) {
   });
   revalidatePath("/picklists");
   revalidatePath("/controleur");
+
+  // Notify controleur that picklist is approved
+  await createNotificationForRole(
+    "CONTROLEUR",
+    "Picklist approuvé",
+    `Picklist ${existing.numeroPicklist} approuvé par l'admin — prêt pour signature`,
+    `/picklists`
+  );
+
   return { data: picklist };
 }
 
@@ -74,6 +93,15 @@ export async function signPicklist(picklistId: string, signature: string) {
     data: { signatureControleur: signature, statut: StatutPicklist.SIGNE },
   });
   revalidatePath("/picklists");
+
+  // Notify magasinier that picklist is signed and ready
+  await createNotificationForRole(
+    "MAGASINIER",
+    "Picklist signé",
+    `Picklist ${existing.numeroPicklist} signé — prêt pour livraison`,
+    `/picklists`
+  );
+
   return { data: picklist };
 }
 

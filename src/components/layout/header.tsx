@@ -4,15 +4,18 @@ import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { LogOut, Menu, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
+import { NotificationBell } from "./notification-bell";
 
 export function Header({
   userName,
   role,
   onToggleSidebar,
+  notificationCount,
 }: {
   userName: string;
   role: string;
   onToggleSidebar: () => void;
+  notificationCount: number;
 }) {
   const { theme, setTheme } = useTheme();
 
@@ -47,6 +50,7 @@ export function Header({
         </Button>
         <div className="hidden md:block" />
         <div className="flex items-center gap-4">
+          <NotificationBell initialCount={notificationCount} />
           <Button
             variant="ghost"
             size="icon"

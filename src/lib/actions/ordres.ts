@@ -6,6 +6,7 @@ import { generateNumeroOR } from "@/lib/utils/numbering";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { StatutOR, StatutPanne } from "@prisma/client";
+import { createNotificationForAllStaff } from "./notifications";
 
 export async function createOrdreReparation(data: unknown) {
   const session = await auth();
@@ -43,6 +44,15 @@ export async function createOrdreReparation(data: unknown) {
 
   revalidatePath("/ordres");
   revalidatePath("/dashboard");
+
+  // Notify all staff about new OR
+  await createNotificationForAllStaff(
+    "Nouvel OR créé",
+    `Ordre de réparation ${numeroOR} — ${ordre.vehicle.matricule} (${ordre.vehicle.client.nom})`,
+    `/ordres/${ordre.id}`,
+    session.user.id!
+  );
+
   return { data: ordre };
 }
 

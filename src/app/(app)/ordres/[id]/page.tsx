@@ -217,9 +217,15 @@ export default async function OrdreDetailPage({ params }: Props) {
                     <Badge variant={pk.paiementStatut === StatutPaiementPicklist.PAYE ? "default" : "secondary"}>
                       {pk.paiementStatut === StatutPaiementPicklist.PAYE ? "Paye" : "Non paye"}
                     </Badge>
-                    <Button nativeButton={false} variant="outline" size="sm" render={<Link href={`/api/pdf/picklist/${pk.id}`} target="_blank" />}>
-                      <Download className="h-3 w-3" />
-                    </Button>
+                    {pk.signatureAdmin ? (
+                      <Button nativeButton={false} variant="outline" size="sm" render={<Link href={`/api/pdf/picklist/${pk.id}`} target="_blank" />}>
+                        <Download className="h-3 w-3" />
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" disabled title="En attente de signature admin">
+                        <Download className="h-3 w-3 opacity-50" />
+                      </Button>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-1 text-xs">

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { StatutOR } from "@prisma/client";
+import { StatutOR, StatutPicklist } from "@prisma/client";
 
 export async function getReceptionnisteDashboardStats() {
   const now = new Date();
@@ -16,8 +16,11 @@ export async function getReceptionnisteDashboardStats() {
     ordresEnCours,
     ordresClotureCeMois,
     recentOrdres,
-    picklistsEnAttente,
     totalClients,
+    clients,
+    vehicles,
+    picklists,
+    fichesCloture,
   ] = await Promise.all([
     db.ordreReparation.count({ where: { createdAt: { gte: startOfMonth } } }),
     db.ordreReparation.count({ where: { createdAt: { gte: today } } }),
@@ -31,8 +34,34 @@ export async function getReceptionnisteDashboardStats() {
       orderBy: { createdAt: "desc" },
       include: { vehicle: { include: { client: true } } },
     }),
-    db.picklist.count({ where: { statut: "EN_ATTENTE" } }),
     db.client.count(),
+    db.client.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: { vehicles: { select: { matricule: true } } },
+    }),
+    db.vehicle.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: { client: { select: { nom: true, prenom: true, telephone: true } } },
+    }),
+    db.picklist.findMany({
+      take: 10,
+      orderBy: { createdAt: "desc" },
+      include: {
+        ordreReparation: { select: { numeroOR: true } },
+        items: { select: { id: true } },
+      },
+    }),
+    db.ficheCloture.findMany({
+      take: 10,
+      orderBy: { dateGeneration: "desc" },
+      include: {
+        ordreReparation: {
+          select: { numeroOR: true, vehicle: { select: { matricule: true, marque: true } } },
+        },
+      },
+    }),
   ]);
 
   return {
@@ -42,7 +71,10 @@ export async function getReceptionnisteDashboardStats() {
     ordresEnCours,
     ordresClotureCeMois,
     recentOrdres,
-    picklistsEnAttente,
     totalClients,
+    clients,
+    vehicles,
+    picklists,
+    fichesCloture,
   };
 }

@@ -103,6 +103,8 @@ model User {
   ordresCreated      OrdreReparation[]
   mouvementsStock    MouvementStock[]
   validationsMouvement MouvementStock[] @relation("validationsMouvement")
+  notifications      Notification[]
+  chatMessages       ChatMessage[]
 }
 
 model Client {
@@ -293,4 +295,27 @@ model Paiement {
   facture             Facture?        @relation(fields: [factureId], references: [id])
   referencePaiement   String?
   date                DateTime        @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  titre     String
+  message   String
+  lien      String?
+  lu        Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, lu])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)])
 }

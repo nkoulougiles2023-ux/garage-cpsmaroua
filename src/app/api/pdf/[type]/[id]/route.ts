@@ -59,6 +59,12 @@ export async function GET(
             { status: 404 }
           );
         }
+        if (!picklist.signatureAdmin) {
+          return NextResponse.json(
+            { error: "Le picklist doit être approuvé et signé par l'admin avant impression" },
+            { status: 403 }
+          );
+        }
         document = React.createElement(PicklistPdf, { data: picklist });
         filename = `Picklist-${picklist.numeroPicklist}.pdf`;
         break;
